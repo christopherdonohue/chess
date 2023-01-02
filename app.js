@@ -6,6 +6,7 @@ const pieces = {
     spacesCanMove: 'unlimited',
     blackAvailable: 2,
     whiteAvailable: 2,
+    symb: '♜',
   },
 
   knight: {
@@ -15,6 +16,7 @@ const pieces = {
     spacesCanMove: 3,
     blackAvailable: 2,
     whiteAvailable: 2,
+    symb: '♞',
   },
 
   bishop: {
@@ -24,7 +26,7 @@ const pieces = {
     spacesCanMove: 'unlimited',
     blackAvailable: 2,
     whiteAvailable: 2,
-    moveSet: [7, 9],
+    symb: '♝',
   },
 
   queen: {
@@ -34,6 +36,7 @@ const pieces = {
     spacesCanMove: 'unlimited',
     blackAvailable: 1,
     whiteAvailable: 1,
+    symb: '♛',
   },
 
   king: {
@@ -43,6 +46,7 @@ const pieces = {
     spacesCanMove: 1,
     blackAvailable: 1,
     whiteAvailable: 1,
+    symb: '♚',
   },
 
   pawn: {
@@ -54,6 +58,7 @@ const pieces = {
     whiteAvailable: 8,
     moveSet: 8,
     cannotMoveBackwards: true,
+    symb: '♟',
   },
 };
 
@@ -71,7 +76,7 @@ let allAvailableSquaresFound = false;
 const findPiece = (pieceToFind) => {
   let pieceFound;
   for (const piece in pieces) {
-    if (pieces[piece].letter === pieceToFind) {
+    if (pieces[piece].symb === pieceToFind) {
       pieceFound = pieces[piece];
     }
   }
@@ -466,9 +471,10 @@ const newGame = function () {
   const enemiesKilledContainerBottom = document.createElement('div');
 
   // prettier-ignore
-  const blackPieces = ['R','K','B','Q','X','B','K','R','P','P','P','P','P','P','P','P'];
+  const blackPieces = [{letter: 'R', symb: '♜'},{letter: 'K', symb: '♞'},{letter: 'B', symb: '♝'},{letter: 'Q', symb: '♛'},{letter: 'X', symb: '♚'},{letter: 'B', symb: '♝'},{letter: 'K', symb: '♞'},{letter: 'R', symb: '♜'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'}];
   const whitePieces = [...blackPieces].reverse();
   let j = 0;
+
   let k = 0;
 
   const createBox = (i) => {
@@ -611,13 +617,13 @@ const newGame = function () {
     });
 
     if (i < 16) {
-      pieceContainer.innerText = blackPieces[i];
+      pieceContainer.innerText = blackPieces[i].symb;
       pieceContainer.classList.add('black');
       dropZone.appendChild(pieceContainer);
     }
 
     if (i > 47) {
-      pieceContainer.innerText = whitePieces[k];
+      pieceContainer.innerText = whitePieces[k].symb;
       pieceContainer.classList.add('white');
       dropZone.appendChild(pieceContainer);
       k++;
