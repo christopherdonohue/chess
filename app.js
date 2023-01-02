@@ -480,6 +480,19 @@ const newGame = function () {
     pieceContainer.draggable = true;
     pieceContainer.classList.add('draggable');
 
+    pieceContainer.addEventListener(
+      'touchstart',
+      (e) => {
+        //e.preventDefault();
+        currentPiece.ref = findPiece(e.target.innerText);
+        currentPiece.ref.pieceColor = e.target.style.color;
+        currentPiece.html = e.target;
+        pieceHtml = e.target;
+        //// console.log(currentPiece);
+      },
+      false
+    );
+
     pieceContainer.addEventListener('dragstart', (e) => {
       currentPiece.ref = findPiece(e.target.innerText);
       currentPiece.ref.pieceColor = e.target.style.color;
@@ -488,10 +501,70 @@ const newGame = function () {
       //// console.log(currentPiece);
     });
 
+    dropZone.addEventListener(
+      'touchmove',
+      (e) => {
+        e.preventDefault();
+        // console.log(e.changedTouches);
+        movePiece(boxArr, currentPiece);
+      },
+      false
+    );
+
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       movePiece(boxArr, currentPiece);
     });
+
+    dropZone.addEventListener(
+      'touchend',
+      (e) => {
+        e.preventDefault();
+        console.log(
+          document.elementFromPoint(
+            e.changedTouches[0].pageX,
+            e.changedTouches[0].pageY
+          )
+        );
+        let tempEl = document.elementFromPoint(
+          e.changedTouches[0].pageX,
+          e.changedTouches[0].pageY
+        );
+        if (tempEl.parentNode.classList.contains('movable')) {
+          tempEl.appendChild(currentPiece.html);
+        }
+        if (tempEl.parentNode.parentNode.classList.contains('can-be-killed')) {
+          tempEl.parentNode.appendChild(currentPiece.html);
+          tempEl.parentNode.parentNode.classList.remove('can-be-killed');
+          tempEl.classList.remove('draggable');
+          tempEl.classList.add('dead-piece');
+          if (getComputedStyle(tempEl).color === 'rgb(0, 0, 0)') {
+            enemiesKilledContainerBottom.appendChild(
+              tempEl.parentNode.removeChild(tempEl.parentNode.childNodes[0])
+            );
+          } else {
+            enemiesKilledContainerTop.appendChild(
+              tempEl.parentNode.removeChild(tempEl.parentNode.childNodes[0])
+            );
+          }
+        }
+        squaresItCanMoveToObj.sequence.forEach((domEl) =>
+          domEl.classList.remove('movable')
+        );
+
+        if (squaresItCanMoveToObj.enemies.length > 0) {
+          squaresItCanMoveToObj.enemies.forEach((enemy) => {
+            enemy.classList.remove('enemy');
+            enemy.classList.remove('can-be-killed');
+          });
+        }
+        // console.log(squaresItCanMoveToObj);
+        squaresItCanMoveToObj = { sequence: [], enemies: [] };
+        allAvailableSquaresFound = false;
+        //currentPiece = {};
+      },
+      false
+    );
 
     dropZone.addEventListener('dragend', () => {
       // squaresItCanMoveTo.classList.remove('movable');
@@ -513,6 +586,7 @@ const newGame = function () {
 
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
+      console.log(e.target);
       if (e.target.parentNode.classList.contains('movable')) {
         e.target.appendChild(currentPiece.html);
       }
