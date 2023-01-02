@@ -460,7 +460,10 @@ const movePiece = (squares, currentPiece) => {
 
 const newGame = function () {
   const boxArr = [];
+  const mainContainer = document.createElement('section');
   const board = document.createElement('div');
+  const enemiesKilledContainerTop = document.createElement('div');
+  const enemiesKilledContainerBottom = document.createElement('div');
 
   // prettier-ignore
   const blackPieces = ['R','K','B','Q','X','B','K','R','P','P','P','P','P','P','P','P'];
@@ -472,12 +475,14 @@ const newGame = function () {
     const box = document.createElement('div');
     const pieceContainer = document.createElement('div');
     const dropZone = document.createElement('div');
+
     dropZone.classList.add('dropZone');
     pieceContainer.draggable = true;
     pieceContainer.classList.add('draggable');
 
     pieceContainer.addEventListener('dragstart', (e) => {
       currentPiece.ref = findPiece(e.target.innerText);
+      currentPiece.ref.pieceColor = e.target.style.color;
       currentPiece.html = e.target;
       pieceHtml = e.target;
       //// console.log(currentPiece);
@@ -514,7 +519,20 @@ const newGame = function () {
       if (e.target.parentNode.parentNode.classList.contains('can-be-killed')) {
         e.target.parentNode.appendChild(currentPiece.html);
         e.target.parentNode.parentNode.classList.remove('can-be-killed');
-        e.target.parentNode.removeChild(e.target.parentNode.childNodes[0]);
+        e.target.classList.remove('draggable');
+        e.target.classList.add('dead-piece');
+        if (getComputedStyle(e.target).color === 'rgb(0, 0, 0)') {
+          console.log('hello;');
+          console.log(e.target);
+
+          enemiesKilledContainerBottom.appendChild(
+            e.target.parentNode.removeChild(e.target.parentNode.childNodes[0])
+          );
+        } else {
+          enemiesKilledContainerTop.appendChild(
+            e.target.parentNode.removeChild(e.target.parentNode.childNodes[0])
+          );
+        }
       }
     });
 
@@ -567,17 +585,16 @@ const newGame = function () {
   }
 
   boxArr.forEach((box) => {
-    box.addEventListener('click', () => {
-      for (const piece in pieces) {
-        if (pieces[piece].letter === box.innerText) {
-          // // console.log(pieces[piece]);
-        }
-      }
-    });
     board.appendChild(box);
   });
+  mainContainer.classList.add('main-container');
   board.classList.add('board');
-  document.body.appendChild(board);
+  enemiesKilledContainerTop.classList.add('enemies-killed-container');
+  enemiesKilledContainerBottom.classList.add('enemies-killed-container');
+  document.body.appendChild(mainContainer);
+  mainContainer.appendChild(enemiesKilledContainerTop);
+  mainContainer.appendChild(board);
+  mainContainer.appendChild(enemiesKilledContainerBottom);
 };
 
 newGame();
