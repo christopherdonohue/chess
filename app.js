@@ -57,7 +57,7 @@ const pieces = {
     blackAvailable: 8,
     whiteAvailable: 8,
     moveSet: 8,
-    cannotMoveBackwards: true,
+    canMoveTwoSpaces: true,
     symb: '♟',
   },
 };
@@ -73,7 +73,7 @@ let squaresItCanMoveTo;
 let squaresItCanMoveToObj = { sequence: [], enemies: [] };
 let allAvailableSquaresFound = false;
 
-const findPiece = (pieceToFind) => {
+const findPiece = (pieceToFind, canMoveTwoSpaces = null) => {
   let pieceFound;
   for (const piece in pieces) {
     if (pieces[piece].symb === pieceToFind) {
@@ -153,6 +153,10 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
     if (pieceColor.includes('Pawn') && direction === 'forward') {
       squaresItCanMoveToObj[direction].classList.add('movable');
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
+      if (currentPiece.html.dataset.canMoveTwoSpaces === 'true') {
+        currentPiece.html.dataset.canMoveTwoSpaces = 'false';
+        findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
+      }
     } else if (!pieceColor.includes('Pawn') && !pieceColor.includes('Knight')) {
       squaresItCanMoveToObj[direction].classList.add('movable');
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
@@ -201,7 +205,11 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
       direction
     ].childNodes[0].childNodes[0].classList.contains(pieceColor.substring(0, 5))
   ) {
-    if (pieceColor.includes('Pawn') && direction !== 'forward') {
+    if (
+      pieceColor.includes('Pawn') &&
+      (direction === 'topLeft' || direction === 'topRight') &&
+      !endOfBoard
+    ) {
       squaresItCanMoveToObj[direction].classList.add('enemy');
       squaresItCanMoveToObj[direction].classList.add('can-be-killed');
       squaresItCanMoveToObj.enemies.push(squaresItCanMoveToObj[direction]);
@@ -516,7 +524,7 @@ const newGame = function () {
   const enemiesKilledContainerBottom = document.createElement('div');
 
   // prettier-ignore
-  const blackPieces = [{letter: 'R', symb: '♜'},{letter: 'K', symb: '♞'},{letter: 'B', symb: '♝'},{letter: 'Q', symb: '♛'},{letter: 'X', symb: '♚'},{letter: 'B', symb: '♝'},{letter: 'K', symb: '♞'},{letter: 'R', symb: '♜'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'},{letter: 'P', symb: '♟'}];
+  const blackPieces = [{letter: 'R', symb: '♜'},{letter: 'K', symb: '♞'},{letter: 'B', symb: '♝'},{letter: 'Q', symb: '♛'},{letter: 'X', symb: '♚'},{letter: 'B', symb: '♝'},{letter: 'K', symb: '♞'},{letter: 'R', symb: '♜'},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true}];
   const whitePieces = [...blackPieces].reverse();
   let j = 0;
 
@@ -526,6 +534,7 @@ const newGame = function () {
     const box = document.createElement('div');
     const pieceContainer = document.createElement('div');
     const dropZone = document.createElement('div');
+    let pieceMoved = false;
 
     dropZone.classList.add('dropZone');
     pieceContainer.draggable = true;
@@ -629,6 +638,15 @@ const newGame = function () {
           enemy.classList.remove('can-be-killed');
         });
       }
+
+      if (
+        !pieceMoved &&
+        currentPiece.html.dataset.canMoveTwoSpaces === 'false' &&
+        currentPiece.html.dataset.firstMove !== 'false'
+      ) {
+        console.log('piece didn not move');
+        currentPiece.html.dataset.canMoveTwoSpaces = 'true';
+      }
       // console.log(squaresItCanMoveToObj);
       squaresItCanMoveToObj = { sequence: [], enemies: [] };
       allAvailableSquaresFound = false;
@@ -637,19 +655,24 @@ const newGame = function () {
 
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
-      console.log(e.target);
+      pieceMoved = false;
+      currentPiece.ref.canMoveTwoSpaces = true;
       if (e.target.parentNode.classList.contains('movable')) {
         e.target.appendChild(currentPiece.html);
+        if (currentPiece.ref.name === 'Pawn') {
+          currentPiece.html.dataset.firstMove = 'false';
+        }
+        pieceMoved = true;
       }
       if (e.target.parentNode.parentNode.classList.contains('can-be-killed')) {
         e.target.parentNode.appendChild(currentPiece.html);
+        if (currentPiece.ref.name === 'Pawn') {
+          currentPiece.html.dataset.firstMove = 'false';
+        }
         e.target.parentNode.parentNode.classList.remove('can-be-killed');
         e.target.classList.remove('draggable');
         e.target.classList.add('dead-piece');
         if (getComputedStyle(e.target).color === 'rgb(0, 0, 0)') {
-          console.log('hello;');
-          console.log(e.target);
-
           enemiesKilledContainerBottom.appendChild(
             e.target.parentNode.removeChild(e.target.parentNode.childNodes[0])
           );
@@ -664,12 +687,20 @@ const newGame = function () {
     if (i < 16) {
       pieceContainer.innerText = blackPieces[i].symb;
       pieceContainer.classList.add('black');
+      if (blackPieces[i].letter === 'P') {
+        pieceContainer.dataset.canMoveTwoSpaces =
+          blackPieces[i].canMoveTwoSpaces;
+      }
       dropZone.appendChild(pieceContainer);
     }
 
     if (i > 47) {
       pieceContainer.innerText = whitePieces[k].symb;
       pieceContainer.classList.add('white');
+      if (whitePieces[k].letter === 'P') {
+        pieceContainer.dataset.canMoveTwoSpaces =
+          whitePieces[k].canMoveTwoSpaces;
+      }
       dropZone.appendChild(pieceContainer);
       k++;
     }
