@@ -156,12 +156,16 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
     } else if (!pieceColor.includes('Pawn') && !pieceColor.includes('Knight')) {
       squaresItCanMoveToObj[direction].classList.add('movable');
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
-      if (!squaresItCanMoveToObj[direction].classList.contains('wall')) {
+      if (
+        !squaresItCanMoveToObj[direction].classList.contains('wall') &&
+        !pieceColor.includes('King')
+      ) {
         // console.log(currentPiece.html.parentNode.parentNode.classList);
         findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
       } else if (
         currentPiece.html.parentNode.parentNode.classList.contains('wall') &&
         squaresItCanMoveToObj[direction].classList.contains('wall') &&
+        !pieceColor.includes('King') &&
         (direction === 'forward' ||
           direction === 'backward' ||
           direction === 'left' ||
@@ -185,7 +189,7 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
           direction !== 'right' &&
           findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
       }
-    } else if (pieceColor.includes('Knight')) {
+    } else if (pieceColor.includes('Knight') || pieceColor.includes('King')) {
       // console.log('knight...');
       squaresItCanMoveToObj[direction].classList.add('movable');
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
@@ -226,7 +230,7 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               9,
               'topLeft',
-              currentPiece.ref.cannotMoveBackwards ? 'blackPawn' : 'black'
+              `black${currentPiece.ref.name}`
             );
           }
           if (
@@ -237,7 +241,7 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               7,
               'topRight',
-              currentPiece.ref.cannotMoveBackwards ? 'blackPawn' : 'black'
+              `black${currentPiece.ref.name}`
             );
           }
           if (!currentPiece.ref.cannotMoveBackwards) {
@@ -246,14 +250,22 @@ const movePiece = (squares, currentPiece) => {
                 'left-wall'
               )
             ) {
-              findAllAvailableSquares(9, 'bottomLeft', 'black');
+              findAllAvailableSquares(
+                9,
+                'bottomLeft',
+                `black${currentPiece.ref.name}`
+              );
             }
             if (
               !currentPiece.html.parentNode.parentNode.classList.contains(
                 'right-wall'
               )
             ) {
-              findAllAvailableSquares(7, 'bottomRight', 'black');
+              findAllAvailableSquares(
+                7,
+                'bottomRight',
+                `black${currentPiece.ref.name}`
+              );
             }
           }
         }
@@ -267,7 +279,7 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               9,
               'topLeft',
-              currentPiece.ref.cannotMoveBackwards ? 'whitePawn' : 'white'
+              `white${currentPiece.ref.name}`
             );
           }
           if (
@@ -278,7 +290,7 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               7,
               'topRight',
-              currentPiece.ref.cannotMoveBackwards ? 'whitePawn' : 'white'
+              `white${currentPiece.ref.name}`
             );
           }
           if (!currentPiece.ref.cannotMoveBackwards) {
@@ -287,14 +299,22 @@ const movePiece = (squares, currentPiece) => {
                 'right-wall'
               )
             ) {
-              findAllAvailableSquares(9, 'bottomLeft', 'white');
+              findAllAvailableSquares(
+                9,
+                'bottomLeft',
+                `white${currentPiece.ref.name}`
+              );
             }
             if (
               !currentPiece.html.parentNode.parentNode.classList.contains(
                 'left-wall'
               )
             ) {
-              findAllAvailableSquares(7, 'bottomRight', 'white');
+              findAllAvailableSquares(
+                7,
+                'bottomRight',
+                `white${currentPiece.ref.name}`
+              );
             }
           }
         }
@@ -306,14 +326,18 @@ const movePiece = (squares, currentPiece) => {
               'right-wall'
             )
           ) {
-            findAllAvailableSquares(1, 'left', 'black');
+            findAllAvailableSquares(1, 'left', `black${currentPiece.ref.name}`);
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(1, 'right', 'black');
+            findAllAvailableSquares(
+              1,
+              'right',
+              `black${currentPiece.ref.name}`
+            );
           }
         }
         if (currentPiece.html.classList.contains('white')) {
@@ -322,36 +346,57 @@ const movePiece = (squares, currentPiece) => {
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(1, 'left', 'white');
+            findAllAvailableSquares(1, 'left', `white${currentPiece.ref.name}`);
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
               'right-wall'
             )
           ) {
-            findAllAvailableSquares(1, 'right', 'white');
+            findAllAvailableSquares(
+              1,
+              'right',
+              `white${currentPiece.ref.name}`
+            );
           }
         }
 
         allAvailableSquaresFound = false;
       } else if (direction === 'vertical') {
-        if (currentPiece.ref.cannotMoveBackwards) {
-          if (currentPiece.html.classList.contains('black')) {
-            findAllAvailableSquares(8, 'forward', 'blackPawn');
-          }
-          if (currentPiece.html.classList.contains('white')) {
-            findAllAvailableSquares(8, 'forward', 'whitePawn');
-          }
-        } else {
-          currentPiece.html.classList.contains('black') &&
-            findAllAvailableSquares(8, 'forward', 'black');
-          currentPiece.html.classList.contains('white') &&
-            findAllAvailableSquares(8, 'forward', 'white');
-          currentPiece.html.classList.contains('black') &&
-            findAllAvailableSquares(8, 'backward', 'black');
-          currentPiece.html.classList.contains('white') &&
-            findAllAvailableSquares(8, 'backward', 'white');
-        }
+        // if (currentPiece.ref.cannotMoveBackwards) {
+        //   if (currentPiece.html.classList.contains('black')) {
+        //     findAllAvailableSquares(8, 'forward', 'blackPawn');
+        //   }
+        //   if (currentPiece.html.classList.contains('white')) {
+        //     findAllAvailableSquares(8, 'forward', 'whitePawn');
+        //   }
+        // }
+        // else {
+        currentPiece.html.classList.contains('black') &&
+          findAllAvailableSquares(
+            8,
+            'forward',
+            `black${currentPiece.ref.name}`
+          );
+        currentPiece.html.classList.contains('white') &&
+          findAllAvailableSquares(
+            8,
+            'forward',
+            `white${currentPiece.ref.name}`
+          );
+        currentPiece.html.classList.contains('black') &&
+          findAllAvailableSquares(
+            8,
+            'backward',
+            `black${currentPiece.ref.name}`
+          );
+        currentPiece.html.classList.contains('white') &&
+          findAllAvailableSquares(
+            8,
+            'backward',
+            `white${currentPiece.ref.name}`
+          );
+        // }
         allAvailableSquaresFound = false;
       } else if (direction === 'knight') {
         if (currentPiece.html.classList.contains('black')) {
@@ -670,6 +715,7 @@ const newGame = function () {
   mainContainer.classList.add('main-container');
   board.classList.add('board');
   enemiesKilledContainerTop.classList.add('enemies-killed-container');
+  enemiesKilledContainerTop.classList.add('enemies-killed-container-top');
   enemiesKilledContainerBottom.classList.add('enemies-killed-container');
   document.body.appendChild(mainContainer);
   mainContainer.appendChild(enemiesKilledContainerTop);
