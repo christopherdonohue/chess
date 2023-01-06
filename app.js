@@ -7,6 +7,7 @@ const pieces = {
     blackAvailable: 2,
     whiteAvailable: 2,
     symb: '♜',
+    whiteSymb: '♖',
   },
 
   knight: {
@@ -17,6 +18,7 @@ const pieces = {
     blackAvailable: 2,
     whiteAvailable: 2,
     symb: '♞',
+    whiteSymb: '♘',
   },
 
   bishop: {
@@ -27,6 +29,7 @@ const pieces = {
     blackAvailable: 2,
     whiteAvailable: 2,
     symb: '♝',
+    whiteSymb: '♗',
   },
 
   queen: {
@@ -37,6 +40,7 @@ const pieces = {
     blackAvailable: 1,
     whiteAvailable: 1,
     symb: '♛',
+    whiteSymb: '♕',
   },
 
   king: {
@@ -47,6 +51,7 @@ const pieces = {
     blackAvailable: 1,
     whiteAvailable: 1,
     symb: '♚',
+    whiteSymb: '♔',
   },
 
   pawn: {
@@ -59,6 +64,7 @@ const pieces = {
     moveSet: 8,
     canMoveTwoSpaces: true,
     symb: '♟',
+    whiteSymb: '♙',
   },
 };
 
@@ -72,18 +78,27 @@ let currentlyHoldingPiece;
 let squaresItCanMoveTo;
 let squaresItCanMoveToObj = { sequence: [], enemies: [] };
 let allAvailableSquaresFound = false;
+let tempKing;
 
-const findPiece = (pieceToFind, canMoveTwoSpaces = null) => {
+const findPiece = (pieceToFind) => {
   let pieceFound;
   for (const piece in pieces) {
-    if (pieces[piece].symb === pieceToFind) {
+    if (
+      pieces[piece].symb === pieceToFind ||
+      pieces[piece].whiteSymb === pieceToFind
+    ) {
       pieceFound = pieces[piece];
     }
   }
   return pieceFound;
 };
 
-const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
+const findAllAvailableSquares = (
+  counter,
+  direction,
+  pieceColor = '',
+  seeIfPlayerIsInCheck = false
+) => {
   // squaresItCanMoveTo = currentPiece.html.parentNode.parentNode;
   let tempCounter = counter;
   let tempDirection = direction;
@@ -91,6 +106,8 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
   let topOrBottomWall = false;
   let leftOrRightWall = false;
   let endOfBoard = false;
+  let tempSeeIfPlayerIsInCheck = seeIfPlayerIsInCheck;
+  currentPiece.ref.counter = counter;
   while (counter > 0) {
     if (pieceColor.includes('white')) {
       if (
@@ -151,21 +168,33 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
     !endOfBoard
   ) {
     if (pieceColor.includes('Pawn') && direction === 'forward') {
-      squaresItCanMoveToObj[direction].classList.add('movable');
+      !seeIfPlayerIsInCheck &&
+        squaresItCanMoveToObj[direction].classList.add('movable');
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
       if (currentPiece.html.dataset.canMoveTwoSpaces === 'true') {
         currentPiece.html.dataset.canMoveTwoSpaces = 'false';
-        findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
+        findAllAvailableSquares(
+          tempCounter,
+          tempDirection,
+          tempPieceColor,
+          tempSeeIfPlayerIsInCheck
+        );
       }
     } else if (!pieceColor.includes('Pawn') && !pieceColor.includes('Knight')) {
-      squaresItCanMoveToObj[direction].classList.add('movable');
+      !seeIfPlayerIsInCheck &&
+        squaresItCanMoveToObj[direction].classList.add('movable');
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
       if (
         !squaresItCanMoveToObj[direction].classList.contains('wall') &&
         !pieceColor.includes('King')
       ) {
         // console.log(currentPiece.html.parentNode.parentNode.classList);
-        findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
+        findAllAvailableSquares(
+          tempCounter,
+          tempDirection,
+          tempPieceColor,
+          tempSeeIfPlayerIsInCheck
+        );
       } else if (
         currentPiece.html.parentNode.parentNode.classList.contains('wall') &&
         squaresItCanMoveToObj[direction].classList.contains('wall') &&
@@ -185,17 +214,29 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
             !squaresItCanMoveToObj[direction].classList.contains('left-wall') &&
             !squaresItCanMoveToObj[direction].classList.contains('right-wall')
           ) {
-            findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
+            findAllAvailableSquares(
+              tempCounter,
+              tempDirection,
+              tempPieceColor,
+              tempSeeIfPlayerIsInCheck
+            );
           }
         }
         !topOrBottomWall &&
           direction !== 'left' &&
           direction !== 'right' &&
-          findAllAvailableSquares(tempCounter, tempDirection, tempPieceColor);
+          findAllAvailableSquares(
+            tempCounter,
+            tempDirection,
+            tempPieceColor,
+            tempSeeIfPlayerIsInCheck
+          );
       }
     } else if (pieceColor.includes('Knight') || pieceColor.includes('King')) {
       // console.log('knight...');
-      squaresItCanMoveToObj[direction].classList.add('movable');
+      if (!seeIfPlayerIsInCheck) {
+        squaresItCanMoveToObj[direction].classList.add('movable');
+      }
       squaresItCanMoveToObj.sequence.push(squaresItCanMoveToObj[direction]);
     }
   } else if (
@@ -210,12 +251,16 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
       (direction === 'topLeft' || direction === 'topRight') &&
       !endOfBoard
     ) {
-      squaresItCanMoveToObj[direction].classList.add('enemy');
-      squaresItCanMoveToObj[direction].classList.add('can-be-killed');
+      if (!seeIfPlayerIsInCheck) {
+        squaresItCanMoveToObj[direction].classList.add('enemy');
+        squaresItCanMoveToObj[direction].classList.add('can-be-killed');
+      }
       squaresItCanMoveToObj.enemies.push(squaresItCanMoveToObj[direction]);
     } else if (!pieceColor.includes('Pawn') && !endOfBoard) {
-      squaresItCanMoveToObj[direction].classList.add('enemy');
-      squaresItCanMoveToObj[direction].classList.add('can-be-killed');
+      if (!seeIfPlayerIsInCheck) {
+        squaresItCanMoveToObj[direction].classList.add('enemy');
+        squaresItCanMoveToObj[direction].classList.add('can-be-killed');
+      }
       squaresItCanMoveToObj.enemies.push(squaresItCanMoveToObj[direction]);
     }
   }
@@ -223,7 +268,7 @@ const findAllAvailableSquares = (counter, direction, pieceColor = '') => {
   squaresItCanMoveTo = currentPiece.html.parentNode.parentNode;
 };
 
-const movePiece = (squares, currentPiece) => {
+const movePiece = (currentPiece, seeIfPlayerIsInCheck = false) => {
   currentPiece.ref.directions.forEach((direction) => {
     //// console.log(direction);
     if (!allAvailableSquaresFound) {
@@ -238,7 +283,8 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               9,
               'topLeft',
-              `black${currentPiece.ref.name}`
+              `black${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
             );
           }
           if (
@@ -249,7 +295,8 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               7,
               'topRight',
-              `black${currentPiece.ref.name}`
+              `black${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
             );
           }
           if (!currentPiece.ref.cannotMoveBackwards) {
@@ -261,7 +308,8 @@ const movePiece = (squares, currentPiece) => {
               findAllAvailableSquares(
                 9,
                 'bottomLeft',
-                `black${currentPiece.ref.name}`
+                `black${currentPiece.ref.name}`,
+                seeIfPlayerIsInCheck
               );
             }
             if (
@@ -272,7 +320,8 @@ const movePiece = (squares, currentPiece) => {
               findAllAvailableSquares(
                 7,
                 'bottomRight',
-                `black${currentPiece.ref.name}`
+                `black${currentPiece.ref.name}`,
+                seeIfPlayerIsInCheck
               );
             }
           }
@@ -287,7 +336,8 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               9,
               'topLeft',
-              `white${currentPiece.ref.name}`
+              `white${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
             );
           }
           if (
@@ -298,7 +348,8 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               7,
               'topRight',
-              `white${currentPiece.ref.name}`
+              `white${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
             );
           }
           if (!currentPiece.ref.cannotMoveBackwards) {
@@ -310,7 +361,8 @@ const movePiece = (squares, currentPiece) => {
               findAllAvailableSquares(
                 9,
                 'bottomLeft',
-                `white${currentPiece.ref.name}`
+                `white${currentPiece.ref.name}`,
+                seeIfPlayerIsInCheck
               );
             }
             if (
@@ -321,7 +373,8 @@ const movePiece = (squares, currentPiece) => {
               findAllAvailableSquares(
                 7,
                 'bottomRight',
-                `white${currentPiece.ref.name}`
+                `white${currentPiece.ref.name}`,
+                seeIfPlayerIsInCheck
               );
             }
           }
@@ -334,7 +387,12 @@ const movePiece = (squares, currentPiece) => {
               'right-wall'
             )
           ) {
-            findAllAvailableSquares(1, 'left', `black${currentPiece.ref.name}`);
+            findAllAvailableSquares(
+              1,
+              'left',
+              `black${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
@@ -344,7 +402,8 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               1,
               'right',
-              `black${currentPiece.ref.name}`
+              `black${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
             );
           }
         }
@@ -354,7 +413,12 @@ const movePiece = (squares, currentPiece) => {
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(1, 'left', `white${currentPiece.ref.name}`);
+            findAllAvailableSquares(
+              1,
+              'left',
+              `white${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
@@ -364,7 +428,8 @@ const movePiece = (squares, currentPiece) => {
             findAllAvailableSquares(
               1,
               'right',
-              `white${currentPiece.ref.name}`
+              `white${currentPiece.ref.name}`,
+              seeIfPlayerIsInCheck
             );
           }
         }
@@ -384,25 +449,29 @@ const movePiece = (squares, currentPiece) => {
           findAllAvailableSquares(
             8,
             'forward',
-            `black${currentPiece.ref.name}`
+            `black${currentPiece.ref.name}`,
+            seeIfPlayerIsInCheck
           );
         currentPiece.html.classList.contains('white') &&
           findAllAvailableSquares(
             8,
             'forward',
-            `white${currentPiece.ref.name}`
+            `white${currentPiece.ref.name}`,
+            seeIfPlayerIsInCheck
           );
         currentPiece.html.classList.contains('black') &&
           findAllAvailableSquares(
             8,
             'backward',
-            `black${currentPiece.ref.name}`
+            `black${currentPiece.ref.name}`,
+            seeIfPlayerIsInCheck
           );
         currentPiece.html.classList.contains('white') &&
           findAllAvailableSquares(
             8,
             'backward',
-            `white${currentPiece.ref.name}`
+            `white${currentPiece.ref.name}`,
+            seeIfPlayerIsInCheck
           );
         // }
         allAvailableSquaresFound = false;
@@ -413,15 +482,35 @@ const movePiece = (squares, currentPiece) => {
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(15, 'topLeft', 'blackKnight');
-            findAllAvailableSquares(17, 'bottomRight', 'blackKnight');
+            findAllAvailableSquares(
+              15,
+              'topLeft',
+              'blackKnight',
+              seeIfPlayerIsInCheck
+            );
+            findAllAvailableSquares(
+              17,
+              'bottomRight',
+              'blackKnight',
+              seeIfPlayerIsInCheck
+            );
             if (
               !currentPiece.html.parentNode.parentNode.previousSibling.classList.contains(
                 'left-wall'
               )
             ) {
-              findAllAvailableSquares(6, 'topLeft', 'blackKnight');
-              findAllAvailableSquares(10, 'bottomRight', 'blackKnight');
+              findAllAvailableSquares(
+                6,
+                'topLeft',
+                'blackKnight',
+                seeIfPlayerIsInCheck
+              );
+              findAllAvailableSquares(
+                10,
+                'bottomRight',
+                'blackKnight',
+                seeIfPlayerIsInCheck
+              );
             }
           }
           if (
@@ -433,16 +522,36 @@ const movePiece = (squares, currentPiece) => {
               'right-wall'
             )
           ) {
-            findAllAvailableSquares(10, 'topLeft', 'blackKnight');
-            findAllAvailableSquares(6, 'bottomRight', 'blackKnight');
+            findAllAvailableSquares(
+              10,
+              'topLeft',
+              'blackKnight',
+              seeIfPlayerIsInCheck
+            );
+            findAllAvailableSquares(
+              6,
+              'bottomRight',
+              'blackKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
               'right-wall'
             )
           ) {
-            findAllAvailableSquares(17, 'topLeft', 'blackKnight');
-            findAllAvailableSquares(15, 'bottomRight', 'blackKnight');
+            findAllAvailableSquares(
+              17,
+              'topLeft',
+              'blackKnight',
+              seeIfPlayerIsInCheck
+            );
+            findAllAvailableSquares(
+              15,
+              'bottomRight',
+              'blackKnight',
+              seeIfPlayerIsInCheck
+            );
           }
         } else if (currentPiece.html.classList.contains('white')) {
           if (
@@ -450,7 +559,12 @@ const movePiece = (squares, currentPiece) => {
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(17, 'topLeft', 'whiteKnight');
+            findAllAvailableSquares(
+              17,
+              'topLeft',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             currentPiece.html.parentNode.parentNode.previousSibling &&
@@ -461,7 +575,12 @@ const movePiece = (squares, currentPiece) => {
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(10, 'topLeft', 'whiteKnight');
+            findAllAvailableSquares(
+              10,
+              'topLeft',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.nextSibling.classList.contains(
@@ -472,15 +591,30 @@ const movePiece = (squares, currentPiece) => {
             )
           ) {
             // console.log(currentPiece.html.parentNode.parentNode.nextSibling);
-            findAllAvailableSquares(6, 'topRight', 'whiteKnight');
-            findAllAvailableSquares(10, 'bottomRight', 'whiteKnight');
+            findAllAvailableSquares(
+              6,
+              'topRight',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
+            findAllAvailableSquares(
+              10,
+              'bottomRight',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
               'right-wall'
             )
           ) {
-            findAllAvailableSquares(15, 'topRight', 'whiteKnight');
+            findAllAvailableSquares(
+              15,
+              'topRight',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             currentPiece.html.parentNode.parentNode.previousSibling &&
@@ -491,14 +625,24 @@ const movePiece = (squares, currentPiece) => {
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(6, 'bottomLeft', 'whiteKnight');
+            findAllAvailableSquares(
+              6,
+              'bottomLeft',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
               'left-wall'
             )
           ) {
-            findAllAvailableSquares(15, 'bottomLeft', 'whiteKnight');
+            findAllAvailableSquares(
+              15,
+              'bottomLeft',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
           if (
             !currentPiece.html.parentNode.parentNode.classList.contains(
@@ -506,7 +650,12 @@ const movePiece = (squares, currentPiece) => {
             )
           ) {
             // findAllAvailableSquares(10, 'bottomRight', 'whiteKnight');
-            findAllAvailableSquares(17, 'bottomRight', 'whiteKnight');
+            findAllAvailableSquares(
+              17,
+              'bottomRight',
+              'whiteKnight',
+              seeIfPlayerIsInCheck
+            );
           }
         }
       }
@@ -522,10 +671,11 @@ const newGame = function () {
   const board = document.createElement('div');
   const enemiesKilledContainerTop = document.createElement('div');
   const enemiesKilledContainerBottom = document.createElement('div');
-
+  // chrome for android needs the separate character colors... setting color = white doesn't work like it does for firefox or safari
   // prettier-ignore
-  const blackPieces = [{letter: 'R', symb: '♜'},{letter: 'K', symb: '♞'},{letter: 'B', symb: '♝'},{letter: 'Q', symb: '♛'},{letter: 'X', symb: '♚'},{letter: 'B', symb: '♝'},{letter: 'K', symb: '♞'},{letter: 'R', symb: '♜'},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', canMoveTwoSpaces: true}];
-  const whitePieces = [...blackPieces].reverse();
+  // prettier-ignore
+  const blackPieces = [{letter: 'R', symb: '♜', whiteSymb: '♖'},{letter: 'K', symb: '♞', whiteSymb: '♘'},{letter: 'B', symb: '♝', whiteSymb: '♗'},{letter: 'Q', symb: '♛', whiteSymb: '♕'},{letter: 'X', symb: '♚', whiteSymb: '♔'},{letter: 'B', symb: '♝', whiteSymb: '♗'},{letter: 'K', symb: '♞', whiteSymb: '♘'},{letter: 'R', symb: '♜', whiteSymb: '♖'},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true},{letter: 'P', symb: '♟', whiteSymb: '♙', canMoveTwoSpaces: true}];
+  let whitePieces = [...blackPieces].reverse();
   let j = 0;
 
   let k = 0;
@@ -566,32 +716,31 @@ const newGame = function () {
       (e) => {
         e.preventDefault();
         // console.log(e.changedTouches);
-        movePiece(boxArr, currentPiece);
+        movePiece(currentPiece);
       },
       false
     );
 
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
-      movePiece(boxArr, currentPiece);
+      movePiece(currentPiece);
     });
 
     dropZone.addEventListener(
       'touchend',
       (e) => {
         e.preventDefault();
-        console.log(
-          document.elementFromPoint(
-            e.changedTouches[0].pageX,
-            e.changedTouches[0].pageY
-          )
-        );
+        pieceMoved = false;
         let tempEl = document.elementFromPoint(
           e.changedTouches[0].pageX,
           e.changedTouches[0].pageY
         );
         if (tempEl.parentNode.classList.contains('movable')) {
           tempEl.appendChild(currentPiece.html);
+          if (currentPiece.ref.name === 'Pawn') {
+            currentPiece.html.dataset.firstMove = 'false';
+          }
+          pieceMoved = true;
         }
         if (tempEl.parentNode.parentNode.classList.contains('can-be-killed')) {
           tempEl.parentNode.appendChild(currentPiece.html);
@@ -618,10 +767,40 @@ const newGame = function () {
             enemy.classList.remove('can-be-killed');
           });
         }
+
+        if (
+          !pieceMoved &&
+          currentPiece.html.dataset.canMoveTwoSpaces === 'false' &&
+          currentPiece.html.dataset.firstMove !== 'false'
+        ) {
+          console.log('piece didn not move');
+          currentPiece.html.dataset.canMoveTwoSpaces = 'true';
+        }
         // console.log(squaresItCanMoveToObj);
+
+        // See if player is in check...
+
         squaresItCanMoveToObj = { sequence: [], enemies: [] };
         allAvailableSquaresFound = false;
-        //currentPiece = {};
+        // ********** CHECK IF PLAYER IS IN CHECK **********
+        (currentPiece.ref.firstMove === 'false' ||
+          currentPiece.ref.name !== 'Pawn') &&
+          movePiece(currentPiece, true);
+        allAvailableSquaresFound = false;
+        const king = squaresItCanMoveToObj.enemies.find(
+          (enemy) => enemy.innerText === '♚' || enemy.innerText === '♔'
+        );
+
+        if (king) {
+          console.log(king.childNodes);
+          king.childNodes[0].childNodes[0].classList.add('player-in-check');
+          tempKing = king;
+        } else if (tempKing) {
+          console.log('nope');
+          tempKing.childNodes[0].childNodes[0].classList.remove(
+            'player-in-check'
+          );
+        }
       },
       false
     );
@@ -648,9 +827,28 @@ const newGame = function () {
         currentPiece.html.dataset.canMoveTwoSpaces = 'true';
       }
       // console.log(squaresItCanMoveToObj);
+
       squaresItCanMoveToObj = { sequence: [], enemies: [] };
       allAvailableSquaresFound = false;
-      //currentPiece = {};
+      // ********** CHECK IF PLAYER IS IN CHECK **********
+      (currentPiece.ref.firstMove === 'false' ||
+        currentPiece.ref.name !== 'Pawn') &&
+        movePiece(currentPiece, true);
+      allAvailableSquaresFound = false;
+      const king = squaresItCanMoveToObj.enemies.find(
+        (enemy) => enemy.innerText === '♚' || enemy.innerText === '♔'
+      );
+
+      if (king) {
+        console.log(king.childNodes);
+        king.childNodes[0].childNodes[0].classList.add('player-in-check');
+        tempKing = king;
+      } else if (tempKing) {
+        console.log('nope');
+        tempKing.childNodes[0].childNodes[0].classList.remove(
+          'player-in-check'
+        );
+      }
     });
 
     dropZone.addEventListener('drop', (e) => {
@@ -695,7 +893,7 @@ const newGame = function () {
     }
 
     if (i > 47) {
-      pieceContainer.innerText = whitePieces[k].symb;
+      pieceContainer.innerText = whitePieces[k].whiteSymb;
       pieceContainer.classList.add('white');
       if (whitePieces[k].letter === 'P') {
         pieceContainer.dataset.canMoveTwoSpaces =
@@ -745,13 +943,17 @@ const newGame = function () {
   });
   mainContainer.classList.add('main-container');
   board.classList.add('board');
-  enemiesKilledContainerTop.classList.add('enemies-killed-container');
-  enemiesKilledContainerTop.classList.add('enemies-killed-container-top');
+  enemiesKilledContainerTop.classList.add(
+    'enemies-killed-container',
+    'enemies-killed-container-top'
+  );
   enemiesKilledContainerBottom.classList.add('enemies-killed-container');
   document.body.appendChild(mainContainer);
-  mainContainer.appendChild(enemiesKilledContainerTop);
-  mainContainer.appendChild(board);
-  mainContainer.appendChild(enemiesKilledContainerBottom);
+  mainContainer.append(
+    enemiesKilledContainerTop,
+    board,
+    enemiesKilledContainerBottom
+  );
 };
 
 newGame();

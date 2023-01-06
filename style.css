@@ -118,6 +118,26 @@ body {
   margin: 0;
 }
 
+@keyframes inCheck {
+  0% {
+    color: currentColor;
+  }
+  50% {
+    color: rgb(255, 0, 0);
+  }
+
+  100% {
+    color: currentColor;
+  }
+}
+
+.player-in-check {
+  color: currentColor;
+  animation-name: inCheck;
+  animation-duration: 0.75s;
+  animation-iteration-count: infinite;
+}
+
 @media (min-width: 600px) {
   body {
     font-size: 4.2rem;
